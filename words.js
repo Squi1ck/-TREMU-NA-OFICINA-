@@ -1,0 +1,19 @@
+// words.js — palavras portuguesas de 5 letras
+const PALAVRAS = [
+    'PORTA', 'CARTA', 'FALAR', 'CAMPO', 'BANCO', 'CHUVA', 'BRAVO', 'DUPLA',
+    'FORTE', 'FRUTA', 'GESTO', 'GRUPO', 'HUMOR', 'IDEAL', 'LINDA', 'NOITE',
+    'OBRAS', 'PISTA', 'QUEDA', 'ROSTO', 'TANTO', 'VERDE', 'FLOCO', 'PRAIA',
+    'TEMPO', 'TARDE', 'MARCA', 'PLANO', 'CLARO', 'METRO', 'HOTEL', 'FORMA',
+    'CORPO', 'MILHO', 'PINHO', 'TELHA', 'VISOR', 'DISCO', 'GRADE', 'BOLAS',
+    'CARRO', 'ERRAR', 'FAROL', 'GLOBO', 'LENHA', 'MEDIR', 'PEDRA', 'REINO',
+    'SALTA', 'TERNO', 'VAPOR', 'ZEBRA', 'AFETO', 'BARRO', 'CANTO', 'DENTE',
+    'FELIZ', 'GRITO', 'LEITE', 'MOEDA', 'NERVO', 'OLHAR', 'PAGAR', 'TIRAR',
+    'VOTAR', 'ACASO', 'BEBER', 'CLIMA', 'DIZER', 'FUNDO', 'GELAR', 'HOMEM',
+    'IMUNE', 'JUNTO', 'LASER', 'MUNDO', 'NOBRE', 'OPTAR', 'PEGAR', 'RENDA',
+    'SUMIR', 'TORTO', 'UNIDO', 'VIVER', 'ABRIR', 'BOATO', 'CRIAR', 'DOMAR',
+    'FAZER', 'GOSTO', 'HAVER', 'JOGAR', 'LEVAR', 'NUNCA', 'OBTER', 'PODER',
+    'SENSO', 'TOMAR', 'VOZES', 'TROCO', 'ESCOA', 'PISCA', 'REZAR', 'SALVO',
+    'TROCA', 'COLAR', 'BURRO', 'DOBRA', 'FILHO', 'GANHA', 'INVIO', 'JOIAS',
+    'LIXAR', 'MORAL', 'NADAR', 'ONTEM', 'PULAR', 'QUASE', 'SABER', 'TECER',
+    'UMBRA', 'VESPA', 'XAROPE', 'YEOMAN', 'ZEROS'
+];

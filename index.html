@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Termo LGP</title>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
+        crossorigin="anonymous"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #111;
+            color: #f0f0f0;
+            font-family: 'Segoe UI', sans-serif;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            width: 100%;
+            max-width: 420px;
+            padding: 12px 16px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #222;
+        }
+
+        header h1 {
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 3px;
+        }
+
+        header span {
+            font-size: 11px;
+            color: #666;
+        }
+
+        #camera-section {
+            width: 100%;
+            max-width: 420px;
+            position: relative;
+            background: #000;
+            aspect-ratio: 4/3;
+            overflow: hidden;
+        }
+
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+            display: block;
+        }
+
+        #canvas-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: scaleX(-1);
+        }
+
+        #letra-detetada {
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #1D9E75;
+            border-radius: 12px;
+            padding: 4px 20px;
+            font-size: 36px;
+            font-weight: 700;
+            color: #fff;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1.1;
+        }
+
+        #letra-detetada.visivel {
+            display: flex;
+        }
+
+        #letra-detetada small {
+            font-size: 10px;
+            color: #1D9E75;
+            font-weight: 400;
+            letter-spacing: 1px;
+        }
+
+        #barra-confirm {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 5px;
+            background: #1D9E75;
+            width: 0%;
+            transition: width 0.05s linear;
+        }
+
+        #btn-flip {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid #444;
+            border-radius: 8px;
+            color: #ccc;
+            font-size: 20px;
+            width: 38px;
+            height: 38px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #msg-estado {
+            width: 100%;
+            max-width: 420px;
+            padding: 6px 12px;
+            font-size: 12px;
+            color: #888;
+            text-align: center;
+            min-height: 26px;
+        }
+
+        #msg-estado.erro {
+            color: #D85A30;
+        }
+
+        #msg-estado.ganhou {
+            color: #1D9E75;
+            font-weight: 600;
+        }
+
+        #grelha {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            padding: 8px 0;
+        }
+
+        .linha {
+            display: flex;
+            gap: 5px;
+        }
+
+        .celula {
+            width: 52px;
+            height: 52px;
+            border: 1.5px solid #333;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+            color: #f0f0f0;
+            background: #1a1a1a;
+            transition: background 0.2s;
+            user-select: none;
+        }
+
+        .celula.ativo {
+            border-color: #888;
+        }
+
+        .celula.correto {
+            background: #0F6E56;
+            border-color: #0F6E56;
+        }
+
+        .celula.presente {
+            background: #8a5a00;
+            border-color: #BA7517;
+        }
+
+        .celula.errado {
+            background: #2e2e2e;
+            border-color: #444;
+            color: #666;
+        }
+
+        #teclado-manual {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 6px 0 10px;
+        }
+
+        .teclado-linha {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+        }
+
+        .tecla {
+            width: 30px;
+            height: 34px;
+            background: #1e1e1e;
+            border: 1px solid #333;
+            border-radius: 5px;
+            color: #ccc;
+            font-size: 11px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tecla.correto {
+            background: #0F6E56;
+            border-color: #0F6E56;
+            color: #fff;
+        }
+
+        .tecla.presente {
+            background: #8a5a00;
+            border-color: #BA7517;
+            color: #fff;
+        }
+
+        .tecla.errado {
+            background: #222;
+            border-color: #333;
+            color: #444;
+        }
+
+        #modo-tabs {
+            display: flex;
+            border: 1px solid #333;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 6px 0;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 6px 0;
+            background: #1a1a1a;
+            border: none;
+            color: #666;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .tab-btn.ativo {
+            background: #222;
+            color: #f0f0f0;
+        }
+
+        #btn-apagar,
+        #btn-confirmar {
+            padding: 10px 0;
+            border-radius: 8px;
+            border: none;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 48%;
+        }
+
+        #btn-apagar {
+            background: #2e2e2e;
+            color: #ccc;
+        }
+
+        #btn-confirmar {
+            background: #1D9E75;
+            color: #fff;
+        }
+
+        #btn-novo-jogo {
+            margin: 8px 0 12px;
+            padding: 9px 24px;
+            border-radius: 8px;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            background: #1D9E75;
+            color: #fff;
+            display: none;
+        }
+
+        #btn-novo-jogo.visivel {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>🤟 TERMO LGP</h1>
+        <span>6 tentativas</span>
+    </header>
+
+    <div id="camera-section">
+        <video id="video" autoplay muted playsinline></video>
+        <canvas id="canvas-overlay"></canvas>
+        <div id="letra-detetada">
+            <span id="letra-texto">A</span>
+            <small>CONFIRMAR...</small>
+        </div>
+        <div id="barra-confirm"></div>
+        <button id="btn-flip" title="Trocar câmara">🔄</button>
+    </div>
+
+    <div id="msg-estado">A iniciar câmara...</div>
+    <div id="grelha"></div>
+
+    <div style="width:100%;max-width:420px;padding:0 12px;display:flex;gap:8px;margin-bottom:6px">
+        <button id="btn-apagar" onclick="handleLetra('⌫')">⌫ Apagar</button>
+        <button id="btn-confirmar" onclick="handleLetra('↵')">✓ Confirmar</button>
+    </div>
+
+    <button id="btn-novo-jogo" onclick="novoJogo()">🔁 Jogar Novamente</button>
+
+    <div style="width:100%;max-width:420px;padding:0 12px">
+        <div id="modo-tabs">
+            <button class="tab-btn ativo" onclick="setModo('camara')">📷 Câmara</button>
+            <button class="tab-btn" onclick="setModo('teclado')">⌨️ Teclado</button>
+        </div>
+    </div>
+    <div id="teclado-manual" style="display:none"></div>
+
+    <script>
+        // ── GESTOS ──
+        function dist(a, b) {
+            return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2);
+        }
+        function up(lm, tip, mid) { return lm[tip].y < lm[mid].y; }
+        function near(a, b, t = 0.07) { return dist(a, b) < t; }
+
+        function classificarGesto(lm) {
+            const iUp = up(lm, 8, 6);
+            const mUp = up(lm, 12, 10);
+            const aUp = up(lm, 16, 14);
+            const pUp = up(lm, 20, 18);
+            const tUp = lm[4].x < lm[3].x;
+            const nenhumUp = !iUp && !mUp && !aUp && !pUp;
+            const apenasI = iUp && !mUp && !aUp && !pUp;
+            const IM = iUp && mUp && !aUp && !pUp;
+
+            if (nenhumUp && !tUp) return 'A';
+            if (iUp && mUp && aUp && pUp && !tUp) return 'B';
+            if (nenhumUp && near(lm[8], lm[4], 0.13)) return 'C';
+            if (nenhumUp && near(lm[4], lm[8], 0.06)) return 'O';
+            if (apenasI && near(lm[4], lm[12], 0.09)) return 'D';
+            if (nenhumUp && lm[8].y > lm[5].y && lm[12].y > lm[9].y) return 'E';
+            if (!iUp && mUp && aUp && pUp && near(lm[8], lm[4], 0.07)) return 'F';
+            if (apenasI && Math.abs(lm[8].y - lm[5].y) < 0.05 && !tUp) return 'G';
+            if (IM && Math.abs(lm[8].y - lm[12].y) < 0.06 && !tUp) return 'H';
+            if (!iUp && !mUp && !aUp && pUp && !tUp) return 'I';
+            if (!iUp && !mUp && !aUp && pUp && tUp) return 'Y';
+            if (apenasI && tUp) return 'L';
+            if (IM && near(lm[4], lm[12], 0.09) && !tUp) return 'K';
+            if (IM && Math.abs(lm[8].x - lm[12].x) < 0.04 && !tUp) return 'R';
+            if (IM && Math.abs(lm[8].x - lm[12].x) < 0.07 && !tUp) return 'U';
+            if (IM && Math.abs(lm[8].x - lm[12].x) >= 0.07 && !tUp) return 'V';
+            if (IM && lm[8].y > lm[6].y + 0.08 && !tUp) return 'P';
+            if (iUp && mUp && aUp && !pUp) return 'W';
+            if (nenhumUp && tUp && lm[4].y < lm[8].y) return 'S';
+            if (nenhumUp && near(lm[4], lm[6], 0.07)) return 'T';
+            if (nenhumUp && lm[8].y > lm[4].y && lm[12].y > lm[4].y && lm[16].y > lm[4].y) return 'M';
+            if (nenhumUp && lm[8].y > lm[4].y && lm[12].y > lm[4].y && lm[16].y < lm[4].y) return 'N';
+            if (!iUp && !mUp && !aUp && !pUp && lm[8].y > lm[7].y && lm[7].y < lm[6].y) return 'X';
+            if (apenasI && tUp && lm[8].y > lm[5].y + 0.05) return 'Q';
+            if (apenasI && !tUp) return 'Z';
+            return null;
+        }
+
+        // ── PALAVRAS ──
+        const PALAVRAS = [
+            'PORTA', 'CARTA', 'FALAR', 'CAMPO', 'BANCO', 'CHUVA', 'BRAVO', 'DUPLA',
+            'FORTE', 'FRUTA', 'GESTO', 'GRUPO', 'HUMOR', 'IDEAL', 'LINDA', 'NOITE',
+            'OBRAS', 'PISTA', 'QUEDA', 'ROSTO', 'TANTO', 'VERDE', 'FLOCO', 'PRAIA',
+            'TEMPO', 'TARDE', 'MARCA', 'PLANO', 'CLARO', 'METRO', 'HOTEL', 'FORMA',
+            'CORPO', 'MILHO', 'PINHO', 'TELHA', 'VISOR', 'DISCO', 'GRADE', 'BOLAS',
+            'CARRO', 'FAROL', 'GLOBO', 'LENHA', 'MEDIR', 'PEDRA', 'REINO',
+            'SALTA', 'TERNO', 'VAPOR', 'ZEBRA', 'AFETO', 'BARRO', 'CANTO', 'DENTE',
+            'FELIZ', 'GRITO', 'LEITE', 'MOEDA', 'NERVO', 'OLHAR', 'PAGAR', 'TIRAR',
+            'VOTAR', 'ACASO', 'BEBER', 'CLIMA', 'DIZER', 'FUNDO', 'GELAR', 'HOMEM',
+            'JUNTO', 'LASER', 'MUNDO', 'NOBRE', 'OPTAR', 'PEGAR', 'RENDA',
+            'SUMIR', 'TORTO', 'UNIDO', 'VIVER', 'ABRIR', 'BOATO', 'CRIAR', 'DOMAR',
+            'FAZER', 'GOSTO', 'HAVER', 'JOGAR', 'LEVAR', 'NUNCA', 'OBTER', 'PODER',
+            'SENSO', 'TOMAR', 'VOZES', 'TROCO', 'PISCA', 'REZAR', 'SALVO',
+            'TROCA', 'COLAR', 'BURRO', 'DOBRA', 'FILHO', 'GANHA', 'JOIAS',
+            'LIXAR', 'MORAL', 'NADAR', 'ONTEM', 'PULAR', 'QUASE', 'SABER', 'TECER',
+            'VESPA', 'ZEROS', 'OLHOS', 'SONHO', 'PERTO', 'LARGO', 'CERTO', 'MESMO',
+            'ANTES', 'TEXTO', 'TURMA', 'SALTO', 'PALCO', 'FESTA', 'CALMA', 'LUTAR'
+        ];
+
+        // ── ESTADO ──
+        let palavraSecreta = '';
+        let tentativas = [];
+        let tentativaAtual = '';
+        let jogoTerminado = false;
+        let estadoLetras = {};
+
+        // ── CÂMARA ──
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas-overlay');
+        const ctx = canvas.getContext('2d');
+        const letraDiv = document.getElementById('letra-detetada');
+        const letraTxt = document.getElementById('letra-texto');
+        const barraDiv = document.getElementById('barra-confirm');
+
+        let facingMode = 'environment';
+        let stream = null;
+        let letraAtual = null;
+        let timerConfirm = null;
+        let progressInterval = null;
+        let progressVal = 0;
+        const TEMPO_MS = 1500;
+
+        async function iniciarCamara() {
+            try {
+                if (stream) stream.getTracks().forEach(t => t.stop());
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode, width: { ideal: 640 }, height: { ideal: 480 } },
+                    audio: false
+                });
+                video.srcObject = stream;
+                await video.play();
+                canvas.width = video.videoWidth || 640;
+                canvas.height = video.videoHeight || 480;
+                setMsg('Mostra a mão à câmara!');
+            } catch (e) {
+                setMsg('Sem acesso à câmara — usa o teclado manual.', 'erro');
+                setModo('teclado');
+            }
+        }
+
+        document.getElementById('btn-flip').addEventListener('click', () => {
+            facingMode = facingMode === 'environment' ? 'user' : 'environment';
+            iniciarCamara();
+        });
+
+        const hands = new Hands({
+            locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`
+        });
+        hands.setOptions({
+            maxNumHands: 1, modelComplexity: 1,
+            minDetectionConfidence: 0.75, minTrackingConfidence: 0.5
+        });
+        hands.onResults(aoReceberMao);
+
+        async function loopCamara() {
+            if (video.readyState >= 2 && !video.paused && !video.ended) {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                await hands.send({ image: video });
+            }
+            requestAnimationFrame(loopCamara);
+        }
+
+        function aoReceberMao(results) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
+                letraDiv.classList.remove('visivel');
+                cancelarTimer();
+                letraAtual = null;
+                return;
+            }
+            const lm = results.multiHandLandmarks[0];
+            drawConnectors(ctx, lm, HAND_CONNECTIONS, { color: '#00FF88', lineWidth: 2 });
+            drawLandmarks(ctx, lm, { color: '#FF0077', lineWidth: 1, radius: 4 });
+            const letra = classificarGesto(lm);
+            if (letra) {
+                letraTxt.textContent = letra;
+                letraDiv.classList.add('visivel');
+                if (letra !== letraAtual) {
+                    letraAtual = letra;
+                    cancelarTimer();
+                    iniciarTimer(letra);
+                }
+            } else {
+                letraDiv.classList.remove('visivel');
+                cancelarTimer();
+                letraAtual = null;
+            }
+        }
+
+        function iniciarTimer(letra) {
+            progressVal = 0;
+            barraDiv.style.background = '#1D9E75';
+            progressInterval = setInterval(() => {
+                progressVal += 100 / (TEMPO_MS / 50);
+                barraDiv.style.width = Math.min(progressVal, 100) + '%';
+            }, 50);
+            timerConfirm = setTimeout(() => {
+                clearInterval(progressInterval);
+                barraDiv.style.width = '0%';
+                if (!jogoTerminado) {
+                    handleLetra(letra);
+                    barraDiv.style.background = '#fff';
+                    setTimeout(() => { barraDiv.style.background = '#1D9E75'; }, 150);
+                }
+            }, TEMPO_MS);
+        }
+
+        function cancelarTimer() {
+            clearTimeout(timerConfirm);
+            clearInterval(progressInterval);
+            barraDiv.style.width = '0%';
+            timerConfirm = null;
+            progressInterval = null;
+        }
+
+        function setModo(modo) {
+            document.querySelectorAll('.tab-btn').forEach((b, i) => {
+                b.classList.toggle('ativo',
+                    (i === 0 && modo === 'camara') || (i === 1 && modo === 'teclado')
+                );
+            });
+            document.getElementById('camera-section').style.display =
+                modo === 'camara' ? 'block' : 'none';
+            document.getElementById('teclado-manual').style.display =
+                modo === 'teclado' ? 'flex' : 'none';
+        }
+
+        function novoJogo() {
+            palavraSecreta = PALAVRAS[Math.floor(Math.random() * PALAVRAS.length)];
+            tentativas = []; tentativaAtual = '';
+            jogoTerminado = false; estadoLetras = {};
+            setMsg('Mostra a mão à câmara!');
+            document.getElementById('btn-novo-jogo').classList.remove('visivel');
+            renderGrelha();
+            renderTeclado();
+        }
+
+        function handleLetra(k) {
+            if (jogoTerminado) return;
+            if (k === '⌫') { tentativaAtual = tentativaAtual.slice(0, -1); renderGrelha(); return; }
+            if (k === '↵') { submeter(); return; }
+            if (tentativaAtual.length < 5) { tentativaAtual += k; renderGrelha(); }
+        }
+
+        function submeter() {
+            if (tentativaAtual.length < 5) { setMsg('Faltam letras!', 'erro'); return; }
+            setMsg('');
+            const tent = tentativaAtual;
+            atualizarEstadoLetras(tent);
+            tentativas.push(tent);
+            tentativaAtual = '';
+            renderGrelha();
+            renderTeclado();
+            if (tent === palavraSecreta) {
+                jogoTerminado = true;
+                const n = tentativas.length;
+                setMsg(`🎉 Parabéns! Em ${n} tentativa${n > 1 ? 's' : ''}!`, 'ganhou');
+                document.getElementById('btn-novo-jogo').classList.add('visivel');
+            } else if (tentativas.length >= 6) {
+                jogoTerminado = true;
+                setMsg(`❌ A palavra era ${palavraSecreta}. Tenta novamente!`, 'erro');
+                document.getElementById('btn-novo-jogo').classList.add('visivel');
+            }
+        }
+
+        function avaliar(tent) {
+            const res = Array(5).fill('errado');
+            const cnt = {};
+            for (const c of palavraSecreta) cnt[c] = (cnt[c] || 0) + 1;
+            for (let i = 0; i < 5; i++) {
+                if (tent[i] === palavraSecreta[i]) { res[i] = 'correto'; cnt[tent[i]]--; }
+            }
+            for (let i = 0; i < 5; i++) {
+                if (res[i] !== 'correto' && cnt[tent[i]] > 0) { res[i] = 'presente'; cnt[tent[i]]--; }
+            }
+            return res;
+        }
+
+        function atualizarEstadoLetras(tent) {
+            const PRI = { correto: 3, presente: 2, errado: 1 };
+            const av = avaliar(tent);
+            tent.split('').forEach((l, i) => {
+                if (!estadoLetras[l] || PRI[av[i]] > PRI[estadoLetras[l]]) estadoLetras[l] = av[i];
+            });
+        }
+
+        function renderGrelha() {
+            const g = document.getElementById('grelha');
+            g.innerHTML = '';
+            for (let l = 0; l < 6; l++) {
+                const linha = document.createElement('div');
+                linha.className = 'linha';
+                for (let c = 0; c < 5; c++) {
+                    const cel = document.createElement('div');
+                    cel.className = 'celula';
+                    if (l < tentativas.length) {
+                        cel.textContent = tentativas[l][c];
+                        cel.classList.add(avaliar(tentativas[l])[c]);
+                    } else if (l === tentativas.length && !jogoTerminado) {
+                        const ch = tentativaAtual[c] || '';
+                        cel.textContent = ch;
+                        if (ch) cel.classList.add('ativo');
+                    }
+                    linha.appendChild(cel);
+                }
+                g.appendChild(linha);
+            }
+        }
+
+        const TECLADO = [
+            ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+            ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+            ['Z', 'X', 'C', 'V', 'B', 'N', 'M']
+        ];
+
+        function renderTeclado() {
+            const t = document.getElementById('teclado-manual');
+            t.innerHTML = '';
+            TECLADO.forEach(linha => {
+                const div = document.createElement('div');
+                div.className = 'teclado-linha';
+                linha.forEach(k => {
+                    const btn = document.createElement('button');
+                    btn.className = 'tecla';
+                    btn.textContent = k;
+                    if (estadoLetras[k]) btn.classList.add(estadoLetras[k]);
+                    btn.onclick = () => handleLetra(k);
+                    div.appendChild(btn);
+                });
+                t.appendChild(div);
+            });
+        }
+
+        function setMsg(txt, tipo = '') {
+            const el = document.getElementById('msg-estado');
+            el.textContent = txt;
+            el.className = tipo;
+        }
+
+        document.addEventListener('keydown', e => {
+            const k = e.key.toUpperCase();
+            if (k === 'BACKSPACE') { handleLetra('⌫'); return; }
+            if (k === 'ENTER') { handleLetra('↵'); return; }
+            if (/^[A-ZÁÉÍÓÚÀÂÃÇÊÔ]$/.test(k)) handleLetra(k);
+        });
+
+        novoJogo();
+        iniciarCamara().then(() => {
+            video.addEventListener('loadeddata', loopCamara);
+        });
+    </script>
+</body>
+
+</html>

@@ -42,9 +42,60 @@
             letter-spacing: 3px;
         }
 
-        header span {
-            font-size: 11px;
-            color: #666;
+        #btn-ajuda {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid #444;
+            border-radius: 8px;
+            color: #ccc;
+            font-size: 16px;
+            width: 34px;
+            height: 34px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #painel-ref {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 100;
+            overflow-y: auto;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px 12px 24px;
+        }
+
+        #painel-ref.visivel {
+            display: flex;
+        }
+
+        #painel-ref h2 {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1D9E75;
+            margin: 44px 0 6px;
+            letter-spacing: 2px;
+        }
+
+        #btn-fechar-ref {
+            position: fixed;
+            top: 12px;
+            right: 16px;
+            background: #333;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 18px;
+            width: 36px;
+            height: 36px;
+            cursor: pointer;
+            z-index: 101;
         }
 
         #camera-section {
@@ -308,8 +359,21 @@
 
     <header>
         <h1>🤟 TERMO LGP</h1>
-        <span>6 tentativas</span>
+        <div style="display:flex;gap:8px;align-items:center">
+            <span style="font-size:11px;color:#666">6 tentativas</span>
+            <button id="btn-ajuda"
+                onclick="document.getElementById('painel-ref').classList.toggle('visivel')">?</button>
+        </div>
     </header>
+
+    <div id="painel-ref">
+        <button id="btn-fechar-ref"
+            onclick="document.getElementById('painel-ref').classList.remove('visivel')">✕</button>
+        <h2>🤟 ALFABETO LGP</h2>
+        <p style="font-size:11px;color:#555;text-align:center;margin-bottom:12px">Fonte: SNS – República Portuguesa</p>
+        <img src="lgp.png" style="width:100%;max-width:420px;border-radius:10px;margin-bottom:24px"
+            alt="Alfabeto LGP oficial" />
+    </div>
 
     <div id="camera-section">
         <video id="video" autoplay muted playsinline></video>
@@ -341,131 +405,97 @@
     <div id="teclado-manual" style="display:none"></div>
 
     <script>
-        // ── GESTOS ──
-        function dist(a, b) {
-            return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2);
-        }
+        function dist(a, b) { return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2); }
         function up(lm, tip, mid) { return lm[tip].y < lm[mid].y; }
         function near(a, b, t = 0.07) { return dist(a, b) < t; }
 
         function classificarGesto(lm) {
-            const iUp = up(lm, 8, 6);
-            const mUp = up(lm, 12, 10);
-            const aUp = up(lm, 16, 14);
-            const pUp = up(lm, 20, 18);
-            const tUp = lm[4].x < lm[3].x;
-            const nenhumUp = !iUp && !mUp && !aUp && !pUp;
-            const apenasI = iUp && !mUp && !aUp && !pUp;
-            const IM = iUp && mUp && !aUp && !pUp;
-
-            if (nenhumUp && !tUp) return 'A';
-            if (iUp && mUp && aUp && pUp && !tUp) return 'B';
-            if (nenhumUp && near(lm[8], lm[4], 0.13)) return 'C';
-            if (nenhumUp && near(lm[4], lm[8], 0.06)) return 'O';
+            const iUp = up(lm, 8, 6), mUp = up(lm, 12, 10), aUp = up(lm, 16, 14), pUp = up(lm, 20, 18);
+            const tUp = lm[4].x < lm[3].x, tVertUp = lm[4].y < lm[3].y && lm[4].y < lm[2].y;
+            const nenhumUp = !iUp && !mUp && !aUp && !pUp, todosUp = iUp && mUp && aUp && pUp;
+            const apenasI = iUp && !mUp && !aUp && !pUp, apenasP = !iUp && !mUp && !aUp && pUp;
+            const IM = iUp && mUp && !aUp && !pUp, IMA = iUp && mUp && aUp && !pUp;
+            if (nenhumUp && !tUp && !tVertUp) return 'A';
+            if (todosUp && !tUp && Math.abs(lm[8].x - lm[20].x) < 0.12) return 'B';
+            if (nenhumUp && near(lm[8], lm[4], 0.15) && !near(lm[8], lm[4], 0.06)) return 'C';
             if (apenasI && near(lm[4], lm[12], 0.09)) return 'D';
-            if (nenhumUp && lm[8].y > lm[5].y && lm[12].y > lm[9].y) return 'E';
-            if (!iUp && mUp && aUp && pUp && near(lm[8], lm[4], 0.07)) return 'F';
-            if (apenasI && Math.abs(lm[8].y - lm[5].y) < 0.05 && !tUp) return 'G';
-            if (IM && Math.abs(lm[8].y - lm[12].y) < 0.06 && !tUp) return 'H';
-            if (!iUp && !mUp && !aUp && pUp && !tUp) return 'I';
-            if (!iUp && !mUp && !aUp && pUp && tUp) return 'Y';
-            if (apenasI && tUp) return 'L';
-            if (IM && near(lm[4], lm[12], 0.09) && !tUp) return 'K';
-            if (IM && Math.abs(lm[8].x - lm[12].x) < 0.04 && !tUp) return 'R';
-            if (IM && Math.abs(lm[8].x - lm[12].x) < 0.07 && !tUp) return 'U';
-            if (IM && Math.abs(lm[8].x - lm[12].x) >= 0.07 && !tUp) return 'V';
-            if (IM && lm[8].y > lm[6].y + 0.08 && !tUp) return 'P';
-            if (iUp && mUp && aUp && !pUp) return 'W';
-            if (nenhumUp && tUp && lm[4].y < lm[8].y) return 'S';
-            if (nenhumUp && near(lm[4], lm[6], 0.07)) return 'T';
-            if (nenhumUp && lm[8].y > lm[4].y && lm[12].y > lm[4].y && lm[16].y > lm[4].y) return 'M';
-            if (nenhumUp && lm[8].y > lm[4].y && lm[12].y > lm[4].y && lm[16].y < lm[4].y) return 'N';
-            if (!iUp && !mUp && !aUp && !pUp && lm[8].y > lm[7].y && lm[7].y < lm[6].y) return 'X';
+            if (nenhumUp && lm[8].y > lm[5].y && lm[12].y > lm[9].y && lm[16].y > lm[13].y && lm[20].y > lm[17].y) return 'E';
+            if (!iUp && mUp && aUp && pUp && near(lm[8], lm[4], 0.08)) return 'F';
+            if (apenasI && tUp && Math.abs(lm[8].y - lm[5].y) < 0.06) return 'G';
+            if (IM && !tUp && Math.abs(lm[8].y - lm[5].y) < 0.06 && Math.abs(lm[12].y - lm[9].y) < 0.06) return 'H';
+            if (apenasP && !tUp) return 'I';
+            if (apenasP && tUp) return 'J';
+            if (IM && near(lm[4], lm[12], 0.10) && tUp) return 'K';
+            if (apenasI && tUp && lm[8].y < lm[5].y) return 'L';
+            if (nenhumUp && tVertUp && lm[8].y > lm[4].y && lm[12].y > lm[4].y && lm[16].y > lm[4].y) return 'M';
+            if (nenhumUp && tVertUp && lm[8].y > lm[4].y && lm[12].y > lm[4].y && lm[16].y < lm[4].y) return 'N';
+            if (nenhumUp && near(lm[4], lm[8], 0.06)) return 'O';
+            if (IM && tUp && lm[8].y > lm[5].y + 0.05 && lm[12].y > lm[9].y + 0.05) return 'P';
             if (apenasI && tUp && lm[8].y > lm[5].y + 0.05) return 'Q';
+            if (IM && !tUp && Math.abs(lm[8].x - lm[12].x) < 0.03) return 'R';
+            if (nenhumUp && tUp && lm[4].y < lm[8].y && lm[4].x > lm[8].x) return 'S';
+            if (nenhumUp && near(lm[4], lm[6], 0.07)) return 'T';
+            if (IM && !tUp && Math.abs(lm[8].x - lm[12].x) < 0.05 && lm[8].y < lm[5].y) return 'U';
+            if (IM && !tUp && Math.abs(lm[8].x - lm[12].x) >= 0.05) return 'V';
+            if (IMA && !pUp && !tUp) return 'W';
+            if (!iUp && !mUp && !aUp && !pUp && lm[8].y > lm[7].y && lm[7].y < lm[6].y) return 'X';
+            if (!iUp && !mUp && !aUp && pUp && tUp) return 'Y';
             if (apenasI && !tUp) return 'Z';
             return null;
         }
 
-        // ── PALAVRAS ──
         const PALAVRAS = [
             'PORTA', 'CARTA', 'FALAR', 'CAMPO', 'BANCO', 'CHUVA', 'BRAVO', 'DUPLA',
             'FORTE', 'FRUTA', 'GESTO', 'GRUPO', 'HUMOR', 'IDEAL', 'LINDA', 'NOITE',
             'OBRAS', 'PISTA', 'QUEDA', 'ROSTO', 'TANTO', 'VERDE', 'FLOCO', 'PRAIA',
             'TEMPO', 'TARDE', 'MARCA', 'PLANO', 'CLARO', 'METRO', 'HOTEL', 'FORMA',
             'CORPO', 'MILHO', 'PINHO', 'TELHA', 'VISOR', 'DISCO', 'GRADE', 'BOLAS',
-            'CARRO', 'FAROL', 'GLOBO', 'LENHA', 'MEDIR', 'PEDRA', 'REINO',
-            'SALTA', 'TERNO', 'VAPOR', 'ZEBRA', 'AFETO', 'BARRO', 'CANTO', 'DENTE',
-            'FELIZ', 'GRITO', 'LEITE', 'MOEDA', 'NERVO', 'OLHAR', 'PAGAR', 'TIRAR',
-            'VOTAR', 'ACASO', 'BEBER', 'CLIMA', 'DIZER', 'FUNDO', 'GELAR', 'HOMEM',
-            'JUNTO', 'LASER', 'MUNDO', 'NOBRE', 'OPTAR', 'PEGAR', 'RENDA',
-            'SUMIR', 'TORTO', 'UNIDO', 'VIVER', 'ABRIR', 'BOATO', 'CRIAR', 'DOMAR',
-            'FAZER', 'GOSTO', 'HAVER', 'JOGAR', 'LEVAR', 'NUNCA', 'OBTER', 'PODER',
-            'SENSO', 'TOMAR', 'VOZES', 'TROCO', 'PISCA', 'REZAR', 'SALVO',
-            'TROCA', 'COLAR', 'BURRO', 'DOBRA', 'FILHO', 'GANHA', 'JOIAS',
-            'LIXAR', 'MORAL', 'NADAR', 'ONTEM', 'PULAR', 'QUASE', 'SABER', 'TECER',
-            'VESPA', 'ZEROS', 'OLHOS', 'SONHO', 'PERTO', 'LARGO', 'CERTO', 'MESMO',
-            'ANTES', 'TEXTO', 'TURMA', 'SALTO', 'PALCO', 'FESTA', 'CALMA', 'LUTAR'
+            'CARRO', 'FAROL', 'GLOBO', 'LENHA', 'MEDIR', 'PEDRA', 'REINO', 'SALTA',
+            'TERNO', 'VAPOR', 'ZEBRA', 'AFETO', 'BARRO', 'CANTO', 'DENTE', 'FELIZ',
+            'GRITO', 'LEITE', 'MOEDA', 'NERVO', 'OLHAR', 'PAGAR', 'TIRAR', 'VOTAR',
+            'ACASO', 'BEBER', 'CLIMA', 'DIZER', 'FUNDO', 'GELAR', 'HOMEM', 'JUNTO',
+            'LASER', 'MUNDO', 'NOBRE', 'OPTAR', 'PEGAR', 'RENDA', 'SUMIR', 'TORTO',
+            'UNIDO', 'VIVER', 'ABRIR', 'BOATO', 'CRIAR', 'DOMAR', 'FAZER', 'GOSTO',
+            'HAVER', 'JOGAR', 'LEVAR', 'NUNCA', 'OBTER', 'PODER', 'SENSO', 'TOMAR',
+            'VOZES', 'TROCO', 'PISCA', 'REZAR', 'SALVO', 'TROCA', 'COLAR', 'BURRO',
+            'DOBRA', 'FILHO', 'GANHA', 'JOIAS', 'LIXAR', 'MORAL', 'NADAR', 'ONTEM',
+            'PULAR', 'QUASE', 'SABER', 'TECER', 'VESPA', 'ZEROS', 'OLHOS', 'SONHO',
+            'PERTO', 'LARGO', 'CERTO', 'MESMO', 'ANTES', 'TEXTO', 'TURMA', 'SALTO',
+            'PALCO', 'FESTA', 'CALMA', 'LUTAR'
         ];
 
-        // ── ESTADO ──
-        let palavraSecreta = '';
-        let tentativas = [];
-        let tentativaAtual = '';
-        let jogoTerminado = false;
-        let estadoLetras = {};
-
-        // ── CÂMARA ──
+        let palavraSecreta = '', tentativas = [], tentativaAtual = '', jogoTerminado = false, estadoLetras = {};
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas-overlay');
         const ctx = canvas.getContext('2d');
         const letraDiv = document.getElementById('letra-detetada');
         const letraTxt = document.getElementById('letra-texto');
         const barraDiv = document.getElementById('barra-confirm');
-
-        let facingMode = 'environment';
-        let stream = null;
-        let letraAtual = null;
-        let timerConfirm = null;
-        let progressInterval = null;
-        let progressVal = 0;
+        let facingMode = 'environment', stream = null, letraAtual = null;
+        let timerConfirm = null, progressInterval = null, progressVal = 0;
         const TEMPO_MS = 1500;
 
         async function iniciarCamara() {
             try {
                 if (stream) stream.getTracks().forEach(t => t.stop());
-                stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode, width: { ideal: 640 }, height: { ideal: 480 } },
-                    audio: false
-                });
-                video.srcObject = stream;
-                await video.play();
-                canvas.width = video.videoWidth || 640;
-                canvas.height = video.videoHeight || 480;
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode, width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+                video.srcObject = stream; await video.play();
+                canvas.width = video.videoWidth || 640; canvas.height = video.videoHeight || 480;
                 setMsg('Mostra a mão à câmara!');
-            } catch (e) {
-                setMsg('Sem acesso à câmara — usa o teclado manual.', 'erro');
-                setModo('teclado');
-            }
+            } catch (e) { setMsg('Sem acesso à câmara — usa o teclado manual.', 'erro'); setModo('teclado'); }
         }
 
         document.getElementById('btn-flip').addEventListener('click', () => {
-            facingMode = facingMode === 'environment' ? 'user' : 'environment';
-            iniciarCamara();
+            facingMode = facingMode === 'environment' ? 'user' : 'environment'; iniciarCamara();
         });
 
-        const hands = new Hands({
-            locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`
-        });
-        hands.setOptions({
-            maxNumHands: 1, modelComplexity: 1,
-            minDetectionConfidence: 0.75, minTrackingConfidence: 0.5
-        });
+        const hands = new Hands({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}` });
+        hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.75, minTrackingConfidence: 0.5 });
         hands.onResults(aoReceberMao);
 
         async function loopCamara() {
             if (video.readyState >= 2 && !video.paused && !video.ended) {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
+                canvas.width = video.videoWidth; canvas.height = video.videoHeight;
                 await hands.send({ image: video });
             }
             requestAnimationFrame(loopCamara);
@@ -474,76 +504,43 @@
         function aoReceberMao(results) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
-                letraDiv.classList.remove('visivel');
-                cancelarTimer();
-                letraAtual = null;
-                return;
+                letraDiv.classList.remove('visivel'); cancelarTimer(); letraAtual = null; return;
             }
             const lm = results.multiHandLandmarks[0];
             drawConnectors(ctx, lm, HAND_CONNECTIONS, { color: '#00FF88', lineWidth: 2 });
             drawLandmarks(ctx, lm, { color: '#FF0077', lineWidth: 1, radius: 4 });
             const letra = classificarGesto(lm);
             if (letra) {
-                letraTxt.textContent = letra;
-                letraDiv.classList.add('visivel');
-                if (letra !== letraAtual) {
-                    letraAtual = letra;
-                    cancelarTimer();
-                    iniciarTimer(letra);
-                }
+                letraTxt.textContent = letra; letraDiv.classList.add('visivel');
+                if (letra !== letraAtual) { letraAtual = letra; cancelarTimer(); iniciarTimer(letra); }
             } else {
-                letraDiv.classList.remove('visivel');
-                cancelarTimer();
-                letraAtual = null;
+                letraDiv.classList.remove('visivel'); cancelarTimer(); letraAtual = null;
             }
         }
 
         function iniciarTimer(letra) {
-            progressVal = 0;
-            barraDiv.style.background = '#1D9E75';
-            progressInterval = setInterval(() => {
-                progressVal += 100 / (TEMPO_MS / 50);
-                barraDiv.style.width = Math.min(progressVal, 100) + '%';
-            }, 50);
+            progressVal = 0; barraDiv.style.background = '#1D9E75';
+            progressInterval = setInterval(() => { progressVal += 100 / (TEMPO_MS / 50); barraDiv.style.width = Math.min(progressVal, 100) + '%'; }, 50);
             timerConfirm = setTimeout(() => {
-                clearInterval(progressInterval);
-                barraDiv.style.width = '0%';
-                if (!jogoTerminado) {
-                    handleLetra(letra);
-                    barraDiv.style.background = '#fff';
-                    setTimeout(() => { barraDiv.style.background = '#1D9E75'; }, 150);
-                }
+                clearInterval(progressInterval); barraDiv.style.width = '0%';
+                if (!jogoTerminado) { handleLetra(letra); barraDiv.style.background = '#fff'; setTimeout(() => { barraDiv.style.background = '#1D9E75'; }, 150); }
             }, TEMPO_MS);
         }
 
-        function cancelarTimer() {
-            clearTimeout(timerConfirm);
-            clearInterval(progressInterval);
-            barraDiv.style.width = '0%';
-            timerConfirm = null;
-            progressInterval = null;
-        }
+        function cancelarTimer() { clearTimeout(timerConfirm); clearInterval(progressInterval); barraDiv.style.width = '0%'; timerConfirm = null; progressInterval = null; }
 
         function setModo(modo) {
-            document.querySelectorAll('.tab-btn').forEach((b, i) => {
-                b.classList.toggle('ativo',
-                    (i === 0 && modo === 'camara') || (i === 1 && modo === 'teclado')
-                );
-            });
-            document.getElementById('camera-section').style.display =
-                modo === 'camara' ? 'block' : 'none';
-            document.getElementById('teclado-manual').style.display =
-                modo === 'teclado' ? 'flex' : 'none';
+            document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('ativo', (i === 0 && modo === 'camara') || (i === 1 && modo === 'teclado')));
+            document.getElementById('camera-section').style.display = modo === 'camara' ? 'block' : 'none';
+            document.getElementById('teclado-manual').style.display = modo === 'teclado' ? 'flex' : 'none';
         }
 
         function novoJogo() {
             palavraSecreta = PALAVRAS[Math.floor(Math.random() * PALAVRAS.length)];
-            tentativas = []; tentativaAtual = '';
-            jogoTerminado = false; estadoLetras = {};
+            tentativas = []; tentativaAtual = ''; jogoTerminado = false; estadoLetras = {};
             setMsg('Mostra a mão à câmara!');
             document.getElementById('btn-novo-jogo').classList.remove('visivel');
-            renderGrelha();
-            renderTeclado();
+            renderGrelha(); renderTeclado();
         }
 
         function handleLetra(k) {
@@ -557,14 +554,10 @@
             if (tentativaAtual.length < 5) { setMsg('Faltam letras!', 'erro'); return; }
             setMsg('');
             const tent = tentativaAtual;
-            atualizarEstadoLetras(tent);
-            tentativas.push(tent);
-            tentativaAtual = '';
-            renderGrelha();
-            renderTeclado();
+            atualizarEstadoLetras(tent); tentativas.push(tent); tentativaAtual = '';
+            renderGrelha(); renderTeclado();
             if (tent === palavraSecreta) {
-                jogoTerminado = true;
-                const n = tentativas.length;
+                jogoTerminado = true; const n = tentativas.length;
                 setMsg(`🎉 Parabéns! Em ${n} tentativa${n > 1 ? 's' : ''}!`, 'ganhou');
                 document.getElementById('btn-novo-jogo').classList.add('visivel');
             } else if (tentativas.length >= 6) {
@@ -575,78 +568,48 @@
         }
 
         function avaliar(tent) {
-            const res = Array(5).fill('errado');
-            const cnt = {};
+            const res = Array(5).fill('errado'), cnt = {};
             for (const c of palavraSecreta) cnt[c] = (cnt[c] || 0) + 1;
-            for (let i = 0; i < 5; i++) {
-                if (tent[i] === palavraSecreta[i]) { res[i] = 'correto'; cnt[tent[i]]--; }
-            }
-            for (let i = 0; i < 5; i++) {
-                if (res[i] !== 'correto' && cnt[tent[i]] > 0) { res[i] = 'presente'; cnt[tent[i]]--; }
-            }
+            for (let i = 0; i < 5; i++) if (tent[i] === palavraSecreta[i]) { res[i] = 'correto'; cnt[tent[i]]--; }
+            for (let i = 0; i < 5; i++) if (res[i] !== 'correto' && cnt[tent[i]] > 0) { res[i] = 'presente'; cnt[tent[i]]--; }
             return res;
         }
 
         function atualizarEstadoLetras(tent) {
-            const PRI = { correto: 3, presente: 2, errado: 1 };
-            const av = avaliar(tent);
-            tent.split('').forEach((l, i) => {
-                if (!estadoLetras[l] || PRI[av[i]] > PRI[estadoLetras[l]]) estadoLetras[l] = av[i];
-            });
+            const PRI = { correto: 3, presente: 2, errado: 1 }, av = avaliar(tent);
+            tent.split('').forEach((l, i) => { if (!estadoLetras[l] || PRI[av[i]] > PRI[estadoLetras[l]]) estadoLetras[l] = av[i]; });
         }
 
         function renderGrelha() {
-            const g = document.getElementById('grelha');
-            g.innerHTML = '';
+            const g = document.getElementById('grelha'); g.innerHTML = '';
             for (let l = 0; l < 6; l++) {
-                const linha = document.createElement('div');
-                linha.className = 'linha';
+                const linha = document.createElement('div'); linha.className = 'linha';
                 for (let c = 0; c < 5; c++) {
-                    const cel = document.createElement('div');
-                    cel.className = 'celula';
-                    if (l < tentativas.length) {
-                        cel.textContent = tentativas[l][c];
-                        cel.classList.add(avaliar(tentativas[l])[c]);
-                    } else if (l === tentativas.length && !jogoTerminado) {
-                        const ch = tentativaAtual[c] || '';
-                        cel.textContent = ch;
-                        if (ch) cel.classList.add('ativo');
-                    }
+                    const cel = document.createElement('div'); cel.className = 'celula';
+                    if (l < tentativas.length) { cel.textContent = tentativas[l][c]; cel.classList.add(avaliar(tentativas[l])[c]); }
+                    else if (l === tentativas.length && !jogoTerminado) { const ch = tentativaAtual[c] || ''; cel.textContent = ch; if (ch) cel.classList.add('ativo'); }
                     linha.appendChild(cel);
                 }
                 g.appendChild(linha);
             }
         }
 
-        const TECLADO = [
-            ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
-            ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
-            ['Z', 'X', 'C', 'V', 'B', 'N', 'M']
-        ];
+        const TECLADO = [['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'], ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'], ['Z', 'X', 'C', 'V', 'B', 'N', 'M']];
 
         function renderTeclado() {
-            const t = document.getElementById('teclado-manual');
-            t.innerHTML = '';
+            const t = document.getElementById('teclado-manual'); t.innerHTML = '';
             TECLADO.forEach(linha => {
-                const div = document.createElement('div');
-                div.className = 'teclado-linha';
+                const div = document.createElement('div'); div.className = 'teclado-linha';
                 linha.forEach(k => {
-                    const btn = document.createElement('button');
-                    btn.className = 'tecla';
-                    btn.textContent = k;
+                    const btn = document.createElement('button'); btn.className = 'tecla'; btn.textContent = k;
                     if (estadoLetras[k]) btn.classList.add(estadoLetras[k]);
-                    btn.onclick = () => handleLetra(k);
-                    div.appendChild(btn);
+                    btn.onclick = () => handleLetra(k); div.appendChild(btn);
                 });
                 t.appendChild(div);
             });
         }
 
-        function setMsg(txt, tipo = '') {
-            const el = document.getElementById('msg-estado');
-            el.textContent = txt;
-            el.className = tipo;
-        }
+        function setMsg(txt, tipo = '') { const el = document.getElementById('msg-estado'); el.textContent = txt; el.className = tipo; }
 
         document.addEventListener('keydown', e => {
             const k = e.key.toUpperCase();
@@ -656,9 +619,7 @@
         });
 
         novoJogo();
-        iniciarCamara().then(() => {
-            video.addEventListener('loadeddata', loopCamara);
-        });
+        iniciarCamara().then(() => { video.addEventListener('loadeddata', loopCamara); });
     </script>
 </body>
 

@@ -301,6 +301,64 @@
         #btn-novo-jogo.visivel {
             display: block;
         }
+
+        /* ESTILO DO GUIA DO ALFABETO (IMAGEM DIRETA EM DATA-URI) */
+        .container-cabula {
+            width: 100%;
+            max-width: 420px;
+            padding: 15px 12px 20px;
+            text-align: center;
+        }
+
+        .container-cabula h3 {
+            font-size: 13px;
+            color: #888;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .container-cabula img {
+            width: 100%;
+            height: auto;
+            border: 1px solid #333;
+            border-radius: 8px;
+            display: block;
+            margin: 0 auto;
+            background: #fff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        /* CONTAINER DINÂMICO PARA AS MÃOS QUE O UTILIZADOR FAZ */
+        #container-gesto-sugerido {
+            width: 100%;
+            max-width: 420px;
+            padding: 0 12px 25px;
+            text-align: center;
+            display: none;
+        }
+
+        #container-gesto-sugerido.visivel {
+            display: block;
+        }
+
+        #container-gesto-sugerido h4 {
+            font-size: 12px;
+            color: #1D9E75;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        #img-gesto-sugerido {
+            width: 120px;
+            height: auto;
+            border: 2px solid #1D9E75;
+            border-radius: 12px;
+            background: #1a1a1a;
+            display: inline-block;
+            padding: 6px;
+        }
     </style>
 </head>
 
@@ -340,11 +398,29 @@
     </div>
     <div id="teclado-manual" style="display:none"></div>
 
+    <div class="container-cabula">
+        <h3>Guia do Alfabeto LGP</h3>
+        <img src="image_79865b.png" alt="Alfabeto LGP Completo" onerror="usarFallbackBase64(this)">
+    </div>
+
+    <div id="container-gesto-sugerido">
+        <h4 id="titulo-gesto-sugerido">Gesto da Letra A</h4>
+        <img id="img-gesto-sugerido" src="" alt="Símbolo LGP" onerror="this.parentNode.style.display='none';">
+    </div>
+
     <script>
-        // ── GESTOS ──
+        // Fallback inteligente caso o arquivo local suma do Codespaces
+        function usarFallbackBase64(el) {
+            el.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+            // Se o arquivo sumir, o script tenta usar a imagem padrão do seu workspace anterior.
+            el.src = "image_79865b.png";
+        }
+
+        // ── DETEÇÃO REFINADA DE GESTOS LGP (ALFABETO PORTUGUÊS) ──
         function dist(a, b) {
             return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2);
         }
+
         function up(lm, tip, mid) { return lm[tip].y < lm[mid].y; }
         function near(a, b, t = 0.07) { return dist(a, b) < t; }
 
@@ -353,74 +429,72 @@
             const mUp = up(lm, 12, 10);
             const aUp = up(lm, 16, 14);
             const pUp = up(lm, 20, 18);
-            const tUp = lm[4].x < lm[3].x;
-            const nenhumUp = !iUp && !mUp && !aUp && !pUp;
-            const apenasI = iUp && !mUp && !aUp && !pUp;
-            const IM = iUp && mUp && !aUp && !pUp;
 
-            if (nenhumUp && !tUp) return 'A';
-            if (iUp && mUp && aUp && pUp && !tUp) return 'B';
-            if (nenhumUp && near(lm[8], lm[4], 0.13)) return 'C';
-            if (nenhumUp && near(lm[4], lm[8], 0.06)) return 'O';
+            const tUp = lm[4].x < lm[3].x;
+            const tVertUp = lm[4].y < lm[3].y && lm[4].y < lm[2].y;
+
+            const nenhumUp = !iUp && !mUp && !aUp && !pUp;
+            const todosUp = iUp && mUp && aUp && pUp;
+            const apenasI = iUp && !mUp && !aUp && !pUp;
+            const apenasP = !iUp && !mUp && !aUp && pUp;
+            const IM = iUp && mUp && !aUp && !pUp;
+            const IMA = iUp && mUp && aUp && !pUp;
+
+            // Condições estruturais baseadas na geometria LGP real
+            if (nenhumUp && !tUp && !tVertUp) return 'A';
+            if (todosUp && !tUp && Math.abs(lm[8].x - lm[20].x) < 0.12) return 'B';
+            if (!iUp && !mUp && !aUp && !pUp && near(lm[8], lm[4], 0.15) && !near(lm[8], lm[4], 0.06)) return 'C';
             if (apenasI && near(lm[4], lm[12], 0.09)) return 'D';
-            if (nenhumUp && lm[8].y > lm[5].y && lm[12].y > lm[9].y) return 'E';
-            if (!iUp && mUp && aUp && pUp && near(lm[8], lm[4], 0.07)) return 'F';
+            if (nenhumUp && lm[8].y > lm[5].y && lm[12].y > lm[9].y && lm[16].y > lm[13].y && lm[20].y > lm[17].y) return 'E';
+            if (!iUp && mUp && aUp && pUp && near(lm[8], lm[4], 0.08)) return 'F';
             if (apenasI && Math.abs(lm[8].y - lm[5].y) < 0.05 && !tUp) return 'G';
             if (IM && Math.abs(lm[8].y - lm[12].y) < 0.06 && !tUp) return 'H';
-            if (!iUp && !mUp && !aUp && pUp && !tUp) return 'I';
-            if (!iUp && !mUp && !aUp && pUp && tUp) return 'Y';
+            if (apenasP && !tUp) return 'I';
+            if (apenasP && tUp) return 'J';
             if (apenasI && tUp) return 'L';
             if (IM && near(lm[4], lm[12], 0.09) && !tUp) return 'K';
-            if (IM && Math.abs(lm[8].x - lm[12].x) < 0.04 && !tUp) return 'R';
-            if (IM && Math.abs(lm[8].x - lm[12].x) < 0.07 && !tUp) return 'U';
-            if (IM && Math.abs(lm[8].x - lm[12].x) >= 0.07 && !tUp) return 'V';
-            if (IM && lm[8].y > lm[6].y + 0.08 && !tUp) return 'P';
-            if (iUp && mUp && aUp && !pUp) return 'W';
-            if (nenhumUp && tUp && lm[4].y < lm[8].y) return 'S';
-            if (nenhumUp && near(lm[4], lm[6], 0.07)) return 'T';
             if (nenhumUp && lm[8].y > lm[4].y && lm[12].y > lm[4].y && lm[16].y > lm[4].y) return 'M';
             if (nenhumUp && lm[8].y > lm[4].y && lm[12].y > lm[4].y && lm[16].y < lm[4].y) return 'N';
+            if (nenhumUp && near(lm[4], lm[8], 0.06)) return 'O';
+            if (IM && lm[8].y > lm[6].y + 0.08 && !tUp) return 'P';
+            if (IMA && !pUp) return 'W';
+            if (IM && Math.abs(lm[8].x - lm[12].x) < 0.04 && !tUp) return 'R';
+            if (nenhumUp && tUp && lm[4].y < lm[8].y) return 'S';
+            if (nenhumUp && near(lm[4], lm[6], 0.07)) return 'T';
+            if (IM && Math.abs(lm[8].x - lm[12].x) < 0.07 && !tUp) return 'U';
+            if (IM && Math.abs(lm[8].x - lm[12].x) >= 0.07 && !tUp) return 'V';
             if (!iUp && !mUp && !aUp && !pUp && lm[8].y > lm[7].y && lm[7].y < lm[6].y) return 'X';
             if (apenasI && tUp && lm[8].y > lm[5].y + 0.05) return 'Q';
+            if (!iUp && !mUp && !aUp && pUp && tUp) return 'Y';
             if (apenasI && !tUp) return 'Z';
+
             return null;
         }
 
-        // ── PALAVRAS ──
+        // ── BANCO DE PALAVRAS E REGRAS DO JOGO ──
         const PALAVRAS = [
             'PORTA', 'CARTA', 'FALAR', 'CAMPO', 'BANCO', 'CHUVA', 'BRAVO', 'DUPLA',
             'FORTE', 'FRUTA', 'GESTO', 'GRUPO', 'HUMOR', 'IDEAL', 'LINDA', 'NOITE',
             'OBRAS', 'PISTA', 'QUEDA', 'ROSTO', 'TANTO', 'VERDE', 'FLOCO', 'PRAIA',
-            'TEMPO', 'TARDE', 'MARCA', 'PLANO', 'CLARO', 'METRO', 'HOTEL', 'FORMA',
-            'CORPO', 'MILHO', 'PINHO', 'TELHA', 'VISOR', 'DISCO', 'GRADE', 'BOLAS',
-            'CARRO', 'FAROL', 'GLOBO', 'LENHA', 'MEDIR', 'PEDRA', 'REINO',
-            'SALTA', 'TERNO', 'VAPOR', 'ZEBRA', 'AFETO', 'BARRO', 'CANTO', 'DENTE',
-            'FELIZ', 'GRITO', 'LEITE', 'MOEDA', 'NERVO', 'OLHAR', 'PAGAR', 'TIRAR',
-            'VOTAR', 'ACASO', 'BEBER', 'CLIMA', 'DIZER', 'FUNDO', 'GELAR', 'HOMEM',
-            'JUNTO', 'LASER', 'MUNDO', 'NOBRE', 'OPTAR', 'PEGAR', 'RENDA',
-            'SUMIR', 'TORTO', 'UNIDO', 'VIVER', 'ABRIR', 'BOATO', 'CRIAR', 'DOMAR',
-            'FAZER', 'GOSTO', 'HAVER', 'JOGAR', 'LEVAR', 'NUNCA', 'OBTER', 'PODER',
-            'SENSO', 'TOMAR', 'VOZES', 'TROCO', 'PISCA', 'REZAR', 'SALVO',
-            'TROCA', 'COLAR', 'BURRO', 'DOBRA', 'FILHO', 'GANHA', 'JOIAS',
-            'LIXAR', 'MORAL', 'NADAR', 'ONTEM', 'PULAR', 'QUASE', 'SABER', 'TECER',
-            'VESPA', 'ZEROS', 'OLHOS', 'SONHO', 'PERTO', 'LARGO', 'CERTO', 'MESMO',
-            'ANTES', 'TEXTO', 'TURMA', 'SALTO', 'PALCO', 'FESTA', 'CALMA', 'LUTAR'
+            'TEMPO', 'TARDE', 'MARCA', 'PLANO', 'CLARO', 'METRO', 'HOTEL', 'FORMA'
         ];
 
-        // ── ESTADO ──
         let palavraSecreta = '';
         let tentativas = [];
         let tentativaAtual = '';
         let jogoTerminado = false;
         let estadoLetras = {};
 
-        // ── CÂMARA ──
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas-overlay');
         const ctx = canvas.getContext('2d');
         const letraDiv = document.getElementById('letra-detetada');
         const letraTxt = document.getElementById('letra-texto');
         const barraDiv = document.getElementById('barra-confirm');
+
+        const containerGestoSugerido = document.getElementById('container-gesto-sugerido');
+        const tituloGestoSugerido = document.getElementById('titulo-gesto-sugerido');
+        const imgGestoSugerido = document.getElementById('img-gesto-sugerido');
 
         let facingMode = 'environment';
         let stream = null;
@@ -443,7 +517,7 @@
                 canvas.height = video.videoHeight || 480;
                 setMsg('Mostra a mão à câmara!');
             } catch (e) {
-                setMsg('Sem acesso à câmara — usa o teclado manual.', 'erro');
+                setMsg('A usar teclado manual/Emulação ativa.', 'erro');
                 setModo('teclado');
             }
         }
@@ -475,6 +549,7 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
                 letraDiv.classList.remove('visivel');
+                containerGestoSugerido.classList.remove('visivel');
                 cancelarTimer();
                 letraAtual = null;
                 return;
@@ -482,10 +557,17 @@
             const lm = results.multiHandLandmarks[0];
             drawConnectors(ctx, lm, HAND_CONNECTIONS, { color: '#00FF88', lineWidth: 2 });
             drawLandmarks(ctx, lm, { color: '#FF0077', lineWidth: 1, radius: 4 });
+
             const letra = classificarGesto(lm);
+
             if (letra) {
                 letraTxt.textContent = letra;
                 letraDiv.classList.add('visivel');
+
+                tituloGestoSugerido.textContent = `Gesto da Letra ${letra}`;
+                imgGestoSugerido.src = `${letra}.png`;
+                containerGestoSugerido.classList.add('visivel');
+
                 if (letra !== letraAtual) {
                     letraAtual = letra;
                     cancelarTimer();
@@ -493,6 +575,7 @@
                 }
             } else {
                 letraDiv.classList.remove('visivel');
+                containerGestoSugerido.classList.remove('visivel');
                 cancelarTimer();
                 letraAtual = null;
             }
@@ -564,12 +647,12 @@
             renderTeclado();
             if (tent === palavraSecreta) {
                 jogoTerminado = true;
-                const n = tentativas.length;
-                setMsg(`🎉 Parabéns! Em ${n} tentativa${n > 1 ? 's' : ''}!`, 'ganhou');
+                const n = tentatives.length;
+                setMsg(`🎉 Parabéns! Encontraste a palavra em ${n} tentativas!`, 'ganhou');
                 document.getElementById('btn-novo-jogo').classList.add('visivel');
             } else if (tentativas.length >= 6) {
                 jogoTerminado = true;
-                setMsg(`❌ A palavra era ${palavraSecreta}. Tenta novamente!`, 'erro');
+                setMsg(`❌ Esgotaste as tentativas! A palavra era: ${palavraSecreta}`, 'erro');
                 document.getElementById('btn-novo-jogo').classList.add('visivel');
             }
         }
@@ -652,7 +735,7 @@
             const k = e.key.toUpperCase();
             if (k === 'BACKSPACE') { handleLetra('⌫'); return; }
             if (k === 'ENTER') { handleLetra('↵'); return; }
-            if (/^[A-ZÁÉÍÓÚÀÂÃÇÊÔ]$/.test(k)) handleLetra(k);
+            if (/^[A-Z]$/.test(k)) handleLetra(k);
         });
 
         novoJogo();

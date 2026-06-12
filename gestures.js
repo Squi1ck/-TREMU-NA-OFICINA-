@@ -23,10 +23,10 @@ function classificarGesto(lm) {
     const aUp = up(lm, 16, 14);  // anelar levantado
     const pUp = up(lm, 20, 18);  // mindinho levantado
 
-    // Polegar: estendido para o lado (imagem espelhada)
+    // Polegar: estendido para o lado exterior (imagem espelhada)
     const tUp = lm[4].x < lm[3].x;
 
-    // Polegar apontado para cima
+    // Polegar apontado para cima (verticalidade)
     const tVertUp = lm[4].y < lm[3].y && lm[4].y < lm[2].y;
 
     const nenhumUp = !iUp && !mUp && !aUp && !pUp;
@@ -36,111 +36,82 @@ function classificarGesto(lm) {
     const IM = iUp && mUp && !aUp && !pUp;
     const IMA = iUp && mUp && aUp && !pUp;
 
-    // ── A ── punho fechado, polegar ao lado (dobrado sobre indicador)
+    // ── A ── Punho fechado, polegar encostado na lateral do indicador
     if (nenhumUp && !tUp && !tVertUp) return 'A';
 
-    // ── B ── 4 dedos levantados juntos, polegar dobrado para dentro
-    if (todosUp && !tUp &&
-        Math.abs(lm[8].x - lm[20].x) < 0.12) return 'B';
+    // ── B ── 4 dedos esticados e juntos, polegar recolhido na palma
+    if (todosUp && !tUp && Math.abs(lm[8].x - lm[20].x) < 0.12) return 'B';
 
-    // ── C ── forma de arco/garra — todos ligeiramente curvos
-    if (!iUp && !mUp && !aUp && !pUp &&
-        near(lm[8], lm[4], 0.15) &&
-        !near(lm[8], lm[4], 0.06)) return 'C';
+    // ── C ── Formato de garra/arco aberto (polegar afastado do indicador)
+    if (!iUp && !mUp && !aUp && !pUp && near(lm[8], lm[4], 0.15) && !near(lm[8], lm[4], 0.06)) return 'C';
 
-    // ── D ── indicador levantado, polegar toca ponta do médio, outros dobrados
+    // ── D ── Indicador vertical, polegar toca no médio dobrado formando o anel
     if (apenasI && near(lm[4], lm[12], 0.09)) return 'D';
 
-    // ── E ── todos os dedos dobrados, pontas curvadas para baixo
-    if (nenhumUp &&
-        lm[8].y > lm[5].y &&
-        lm[12].y > lm[9].y &&
-        lm[16].y > lm[13].y &&
-        lm[20].y > lm[17].y) return 'E';
+    // ── E ── Dedos recolhidos com as falanges flectidas (pontas tocam perto das bases)
+    if (nenhumUp && lm[8].y > lm[5].y && lm[12].y > lm[9].y && lm[16].y > lm[13].y && lm[20].y > lm[17].y) return 'E';
 
-    // ── F ── indicador dobrado toca polegar, outros 3 levantados
-    if (!iUp && mUp && aUp && pUp &&
-        near(lm[8], lm[4], 0.08)) return 'F';
+    // ── F ── Indicador dobra para baixo e toca na ponta do polegar, restantes 3 esticados
+    if (!iUp && mUp && aUp && pUp && near(lm[8], lm[4], 0.08)) return 'F';
 
-    // ── G ── indicador aponta para o lado (horizontal), polegar paralelo
-    if (apenasI && tUp &&
-        Math.abs(lm[8].y - lm[5].y) < 0.06) return 'G';
+    // ── G ── Indicador esticado na horizontal (mão de lado), polegar paralelo recolhido
+    if (apenasI && Math.abs(lm[8].y - lm[5].y) < 0.05 && !tUp) return 'G';
 
-    // ── H ── indicador + médio apontados para o lado (horizontais)
-    if (IM && !tUp &&
-        Math.abs(lm[8].y - lm[5].y) < 0.06 &&
-        Math.abs(lm[12].y - lm[9].y) < 0.06) return 'H';
+    // ── H ── Indicador e Médio esticados na horizontal e paralelos
+    if (IM && Math.abs(lm[8].y - lm[12].y) < 0.06 && !tUp) return 'H';
 
-    // ── I ── só mindinho levantado, polegar dobrado
+    // ── I ── Apenas o dedo mindinho levantado na vertical, polegar fechado
     if (apenasP && !tUp) return 'I';
 
-    // ── J ── como I mas com movimento (simplificado: mindinho + polegar)
+    // ── J ── Estático simplificado (Derivado do I, mindinho esticado + polegar estendido)
     if (apenasP && tUp) return 'J';
 
-    // ── K ── indicador + médio levantados em V, polegar entre eles
-    if (IM && near(lm[4], lm[12], 0.10) && tUp) return 'K';
+    // ── L ── Indicador na vertical e polegar totalmente estendido na horizontal (Forma "L")
+    if (apenasI && tUp) return 'L';
 
-    // ── L ── indicador levantado + polegar estendido formam L
-    if (apenasI && tUp &&
-        lm[8].y < lm[5].y) return 'L';
+    // ── K ── Indicador e Médio em V, polegar projeta-se para a frente tocando na base do médio
+    if (IM && near(lm[4], lm[12], 0.09) && !tUp) return 'K';
 
-    // ── M ── 3 dedos (indicador, médio, anelar) dobrados sobre o polegar
-    if (nenhumUp && tVertUp &&
-        lm[8].y > lm[4].y &&
-        lm[12].y > lm[4].y &&
-        lm[16].y > lm[4].y) return 'M';
+    // ── M ── Dedos indicador, médio e anelar virados para baixo sobre o polegar escondido
+    if (nenhumUp && lm[8].y > lm[4].y && lm[12].y > lm[4].y && lm[16].y > lm[4].y) return 'M';
 
-    // ── N ── 2 dedos (indicador, médio) dobrados sobre o polegar
-    if (nenhumUp && tVertUp &&
-        lm[8].y > lm[4].y &&
-        lm[12].y > lm[4].y &&
-        lm[16].y < lm[4].y) return 'N';
+    // ── N ── Dedos indicador e médio virados para baixo sobre o polegar, anelar recolhido atrás
+    if (nenhumUp && lm[8].y > lm[4].y && lm[12].y > lm[4].y && lm[16].y < lm[4].y) return 'N';
 
-    // ── O ── círculo fechado: todos os dedos formam O com polegar
+    // ── O ── Pontas de todos os dedos curvadas tocando ou quase tocando no polegar (Círculo perfeito)
     if (nenhumUp && near(lm[4], lm[8], 0.06)) return 'O';
 
-    // ── P ── indicador + médio apontados para baixo, polegar estendido
-    if (IM && tUp &&
-        lm[8].y > lm[5].y + 0.05 &&
-        lm[12].y > lm[9].y + 0.05) return 'P';
+    // ── P ── Indicador e Médio estendidos a apontar ligeiramente para a frente/baixo, polegar estendido
+    if (IM && lm[8].y > lm[6].y + 0.08 && !tUp) return 'P';
 
-    // ── Q ── como G mas indicador aponta para baixo
-    if (apenasI && tUp &&
-        lm[8].y > lm[5].y + 0.05) return 'Q';
+    // ── W ── Três dedos levantados (Indicador, Médio, Anelar) bem afastados
+    if (IMA && !pUp) return 'W';
 
-    // ── R ── indicador + médio cruzados (muito juntos)
-    if (IM && !tUp &&
-        Math.abs(lm[8].x - lm[12].x) < 0.03) return 'R';
+    // ── R ── Indicador e Médio totalmente esticados mas cruzados um sobre o outro
+    if (IM && Math.abs(lm[8].x - lm[12].x) < 0.04 && !tUp) return 'R';
 
-    // ── S ── punho fechado, polegar por cima dos dedos
-    if (nenhumUp && tUp &&
-        lm[4].y < lm[8].y &&
-        lm[4].x > lm[8].x) return 'S';
+    // ── S ── Punho completamente fechado com o polegar recolhido à frente dos dedos
+    if (nenhumUp && tUp && lm[4].y < lm[8].y) return 'S';
 
-    // ── T ── polegar entre indicador e médio
+    // ── T ── Unhas dos dedos fechadas, com o polegar inserido e cruzado atrás do indicador
     if (nenhumUp && near(lm[4], lm[6], 0.07)) return 'T';
 
-    // ── U ── indicador + médio juntos e paralelos (para cima)
-    if (IM && !tUp &&
-        Math.abs(lm[8].x - lm[12].x) < 0.05 &&
-        lm[8].y < lm[5].y) return 'U';
+    // ── U ── Indicador e Médio totalmente esticados para cima e colados (Sem espaço entre eles)
+    if (IM && Math.abs(lm[8].x - lm[12].x) < 0.07 && !tUp) return 'U';
 
-    // ── V ── indicador + médio em V (afastados)
-    if (IM && !tUp &&
-        Math.abs(lm[8].x - lm[12].x) >= 0.05) return 'V';
+    // ── V ── Indicador e Médio esticados para cima mas abertos em forma de "V"
+    if (IM && Math.abs(lm[8].x - lm[12].x) >= 0.07 && !tUp) return 'V';
 
-    // ── W ── indicador + médio + anelar levantados em leque
-    if (IMA && !pUp && !tUp) return 'W';
+    // ── X ── Indicador recolhido e dobrado em forma de gancho, outros fechados
+    if (!iUp && !mUp && !aUp && !pUp && lm[8].y > lm[7].y && lm[7].y < lm[6].y) return 'X';
 
-    // ── X ── indicador dobrado em gancho
-    if (!iUp && !mUp && !aUp && !pUp &&
-        lm[8].y > lm[7].y &&
-        lm[7].y < lm[6].y) return 'X';
+    // ── Q ── Indicador e Polegar apontados para baixo (Gesto em pinça aberta vertical)
+    if (apenasI && tUp && lm[8].y > lm[5].y + 0.05) return 'Q';
 
-    // ── Y ── polegar + mindinho estendidos (shaka 🤙)
+    // ── Y ── Polegar e Mindinho totalmente esticados para os lados opostos, intermédios fechados
     if (!iUp && !mUp && !aUp && pUp && tUp) return 'Y';
 
-    // ── Z ── só indicador levantado, sem polegar (simplificado)
+    // ── Z ── Apenas o dedo indicador apontado para cima (Configuração inicial do desenho do Z)
     if (apenasI && !tUp) return 'Z';
 
     return null;

@@ -42,11 +42,6 @@
             letter-spacing: 3px;
         }
 
-        header span {
-            font-size: 11px;
-            color: #666;
-        }
-
         #camera-section {
             width: 100%;
             max-width: 420px;
@@ -301,73 +296,14 @@
         #btn-novo-jogo.visivel {
             display: block;
         }
-
-        /* ESTILO DO GUIA DO ALFABETO (IMAGEM DIRETA EM DATA-URI) */
-        .container-cabula {
-            width: 100%;
-            max-width: 420px;
-            padding: 15px 12px 20px;
-            text-align: center;
-        }
-
-        .container-cabula h3 {
-            font-size: 13px;
-            color: #888;
-            letter-spacing: 2px;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-        }
-
-        .container-cabula img {
-            width: 100%;
-            height: auto;
-            border: 1px solid #333;
-            border-radius: 8px;
-            display: block;
-            margin: 0 auto;
-            background: #fff;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-        }
-
-        /* CONTAINER DINÂMICO PARA AS MÃOS QUE O UTILIZADOR FAZ */
-        #container-gesto-sugerido {
-            width: 100%;
-            max-width: 420px;
-            padding: 0 12px 25px;
-            text-align: center;
-            display: none;
-        }
-
-        #container-gesto-sugerido.visivel {
-            display: block;
-        }
-
-        #container-gesto-sugerido h4 {
-            font-size: 12px;
-            color: #1D9E75;
-            letter-spacing: 1px;
-            margin-bottom: 6px;
-            text-transform: uppercase;
-        }
-
-        #img-gesto-sugerido {
-            width: 120px;
-            height: auto;
-            border: 2px solid #1D9E75;
-            border-radius: 12px;
-            background: #1a1a1a;
-            display: inline-block;
-            padding: 6px;
-        }
     </style>
 </head>
-
 
 <body>
 
     <header>
         <h1>🤟 TERMO LGP</h1>
-        <span>6 tentativas</span>
+        <span style="font-size:11px;color:#666">6 tentativas</span>
     </header>
 
     <div id="camera-section">
@@ -399,41 +335,15 @@
     </div>
     <div id="teclado-manual" style="display:none"></div>
 
-    <div class="container-cabula">
-        <h3>Guia do Alfabeto LGP</h3>
-        <img src="image_79865b.png" alt="Alfabeto LGP Completo" onerror="usarFallbackBase64(this)">
-    </div>
-
-    <div id="container-gesto-sugerido">
-        <h4 id="titulo-gesto-sugerido">Gesto da Letra A</h4>
-        <img id="img-gesto-sugerido" src="" alt="Símbolo LGP" onerror="this.parentNode.style.display='none';">
-    </div>
-
     <script>
-        // Fallback inteligente caso o arquivo local suma do Codespaces
-        function usarFallbackBase64(el) {
-            el.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
-            // Se o arquivo sumir, o script tenta usar a imagem padrão do seu workspace anterior.
-            el.src = "image_79865b.png";
-        }
-
-        // ── DETEÇÃO REFINADA DE GESTOS LGP (ALFABETO PORTUGUÊS) ──
-        function dist(a, b) {
-            return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2);
-        }
-
+        function dist(a, b) { return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2); }
         function up(lm, tip, mid) { return lm[tip].y < lm[mid].y; }
         function near(a, b, t = 0.07) { return dist(a, b) < t; }
 
         function classificarGesto(lm) {
-            const iUp = up(lm, 8, 6);
-            const mUp = up(lm, 12, 10);
-            const aUp = up(lm, 16, 14);
-            const pUp = up(lm, 20, 18);
-
+            const iUp = up(lm, 8, 6), mUp = up(lm, 12, 10), aUp = up(lm, 16, 14), pUp = up(lm, 20, 18);
             const tUp = lm[4].x < lm[3].x;
             const tVertUp = lm[4].y < lm[3].y && lm[4].y < lm[2].y;
-
             const nenhumUp = !iUp && !mUp && !aUp && !pUp;
             const todosUp = iUp && mUp && aUp && pUp;
             const apenasI = iUp && !mUp && !aUp && !pUp;
@@ -441,84 +351,77 @@
             const IM = iUp && mUp && !aUp && !pUp;
             const IMA = iUp && mUp && aUp && !pUp;
 
-            // Condições estruturais baseadas na geometria LGP real
             if (nenhumUp && !tUp && !tVertUp) return 'A';
             if (todosUp && !tUp && Math.abs(lm[8].x - lm[20].x) < 0.12) return 'B';
-            if (!iUp && !mUp && !aUp && !pUp && near(lm[8], lm[4], 0.15) && !near(lm[8], lm[4], 0.06)) return 'C';
+            if (nenhumUp && near(lm[8], lm[4], 0.15) && !near(lm[8], lm[4], 0.06)) return 'C';
             if (apenasI && near(lm[4], lm[12], 0.09)) return 'D';
             if (nenhumUp && lm[8].y > lm[5].y && lm[12].y > lm[9].y && lm[16].y > lm[13].y && lm[20].y > lm[17].y) return 'E';
             if (!iUp && mUp && aUp && pUp && near(lm[8], lm[4], 0.08)) return 'F';
-            if (apenasI && Math.abs(lm[8].y - lm[5].y) < 0.05 && !tUp) return 'G';
-            if (IM && Math.abs(lm[8].y - lm[12].y) < 0.06 && !tUp) return 'H';
+            if (apenasI && tUp && Math.abs(lm[8].y - lm[5].y) < 0.06) return 'G';
+            if (IM && !tUp && Math.abs(lm[8].y - lm[5].y) < 0.06 && Math.abs(lm[12].y - lm[9].y) < 0.06) return 'H';
             if (apenasP && !tUp) return 'I';
             if (apenasP && tUp) return 'J';
-            if (apenasI && tUp) return 'L';
-            if (IM && near(lm[4], lm[12], 0.09) && !tUp) return 'K';
-            if (nenhumUp && lm[8].y > lm[4].y && lm[12].y > lm[4].y && lm[16].y > lm[4].y) return 'M';
-            if (nenhumUp && lm[8].y > lm[4].y && lm[12].y > lm[4].y && lm[16].y < lm[4].y) return 'N';
+            if (IM && near(lm[4], lm[12], 0.10) && tUp) return 'K';
+            if (apenasI && tUp && lm[8].y < lm[5].y) return 'L';
+            if (nenhumUp && tVertUp && lm[8].y > lm[4].y && lm[12].y > lm[4].y && lm[16].y > lm[4].y) return 'M';
+            if (nenhumUp && tVertUp && lm[8].y > lm[4].y && lm[12].y > lm[4].y && lm[16].y < lm[4].y) return 'N';
             if (nenhumUp && near(lm[4], lm[8], 0.06)) return 'O';
-            if (IM && lm[8].y > lm[6].y + 0.08 && !tUp) return 'P';
-            if (IMA && !pUp) return 'W';
-            if (IM && Math.abs(lm[8].x - lm[12].x) < 0.04 && !tUp) return 'R';
-            if (nenhumUp && tUp && lm[4].y < lm[8].y) return 'S';
-            if (nenhumUp && near(lm[4], lm[6], 0.07)) return 'T';
-            if (IM && Math.abs(lm[8].x - lm[12].x) < 0.07 && !tUp) return 'U';
-            if (IM && Math.abs(lm[8].x - lm[12].x) >= 0.07 && !tUp) return 'V';
-            if (!iUp && !mUp && !aUp && !pUp && lm[8].y > lm[7].y && lm[7].y < lm[6].y) return 'X';
+            if (IM && tUp && lm[8].y > lm[5].y + 0.05 && lm[12].y > lm[9].y + 0.05) return 'P';
             if (apenasI && tUp && lm[8].y > lm[5].y + 0.05) return 'Q';
+            if (IM && !tUp && Math.abs(lm[8].x - lm[12].x) < 0.03) return 'R';
+            if (nenhumUp && tUp && lm[4].y < lm[8].y && lm[4].x > lm[8].x) return 'S';
+            if (nenhumUp && near(lm[4], lm[6], 0.07)) return 'T';
+            if (IM && !tUp && Math.abs(lm[8].x - lm[12].x) < 0.05 && lm[8].y < lm[5].y) return 'U';
+            if (IM && !tUp && Math.abs(lm[8].x - lm[12].x) >= 0.05) return 'V';
+            if (IMA && !pUp && !tUp) return 'W';
+            if (!iUp && !mUp && !aUp && !pUp && lm[8].y > lm[7].y && lm[7].y < lm[6].y) return 'X';
             if (!iUp && !mUp && !aUp && pUp && tUp) return 'Y';
             if (apenasI && !tUp) return 'Z';
-
             return null;
         }
 
-        // ── BANCO DE PALAVRAS E REGRAS DO JOGO ──
         const PALAVRAS = [
             'PORTA', 'CARTA', 'FALAR', 'CAMPO', 'BANCO', 'CHUVA', 'BRAVO', 'DUPLA',
             'FORTE', 'FRUTA', 'GESTO', 'GRUPO', 'HUMOR', 'IDEAL', 'LINDA', 'NOITE',
             'OBRAS', 'PISTA', 'QUEDA', 'ROSTO', 'TANTO', 'VERDE', 'FLOCO', 'PRAIA',
-            'TEMPO', 'TARDE', 'MARCA', 'PLANO', 'CLARO', 'METRO', 'HOTEL', 'FORMA'
+            'TEMPO', 'TARDE', 'MARCA', 'PLANO', 'CLARO', 'METRO', 'HOTEL', 'FORMA',
+            'CORPO', 'MILHO', 'PINHO', 'TELHA', 'VISOR', 'DISCO', 'GRADE', 'BOLAS',
+            'CARRO', 'FAROL', 'GLOBO', 'LENHA', 'MEDIR', 'PEDRA', 'REINO', 'SALTA',
+            'TERNO', 'VAPOR', 'ZEBRA', 'AFETO', 'BARRO', 'CANTO', 'DENTE', 'FELIZ',
+            'GRITO', 'LEITE', 'MOEDA', 'NERVO', 'OLHAR', 'PAGAR', 'TIRAR', 'VOTAR',
+            'ACASO', 'BEBER', 'CLIMA', 'DIZER', 'FUNDO', 'GELAR', 'HOMEM', 'JUNTO',
+            'LASER', 'MUNDO', 'NOBRE', 'OPTAR', 'PEGAR', 'RENDA', 'SUMIR', 'TORTO',
+            'UNIDO', 'VIVER', 'ABRIR', 'BOATO', 'CRIAR', 'DOMAR', 'FAZER', 'GOSTO',
+            'HAVER', 'JOGAR', 'LEVAR', 'NUNCA', 'OBTER', 'PODER', 'SENSO', 'TOMAR',
+            'VOZES', 'TROCO', 'PISCA', 'REZAR', 'SALVO', 'TROCA', 'COLAR', 'BURRO',
+            'DOBRA', 'FILHO', 'GANHA', 'JOIAS', 'LIXAR', 'MORAL', 'NADAR', 'ONTEM',
+            'PULAR', 'QUASE', 'SABER', 'TECER', 'VESPA', 'ZEROS', 'OLHOS', 'SONHO',
+            'PERTO', 'LARGO', 'CERTO', 'MESMO', 'ANTES', 'TEXTO', 'TURMA', 'SALTO',
+            'PALCO', 'FESTA', 'CALMA', 'LUTAR'
         ];
 
-        let palavraSecreta = '';
-        let tentativas = [];
-        let tentativaAtual = '';
-        let jogoTerminado = false;
-        let estadoLetras = {};
-
+        let palavraSecreta = '', tentativas = [], tentativaAtual = '', jogoTerminado = false, estadoLetras = {};
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas-overlay');
         const ctx = canvas.getContext('2d');
         const letraDiv = document.getElementById('letra-detetada');
         const letraTxt = document.getElementById('letra-texto');
         const barraDiv = document.getElementById('barra-confirm');
-
-        const containerGestoSugerido = document.getElementById('container-gesto-sugerido');
-        const tituloGestoSugerido = document.getElementById('titulo-gesto-sugerido');
-        const imgGestoSugerido = document.getElementById('img-gesto-sugerido');
-
-        let facingMode = 'environment';
-        let stream = null;
-        let letraAtual = null;
-        let timerConfirm = null;
-        let progressInterval = null;
-        let progressVal = 0;
+        let facingMode = 'environment', stream = null, letraAtual = null;
+        let timerConfirm = null, progressInterval = null, progressVal = 0;
+        let loopAtivo = false;
         const TEMPO_MS = 1500;
 
         async function iniciarCamara() {
             try {
                 if (stream) stream.getTracks().forEach(t => t.stop());
-                stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode, width: { ideal: 640 }, height: { ideal: 480 } },
-                    audio: false
-                });
-                video.srcObject = stream;
-                await video.play();
-                canvas.width = video.videoWidth || 640;
-                canvas.height = video.videoHeight || 480;
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode, width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+                video.srcObject = stream; await video.play();
+                canvas.width = video.videoWidth || 640; canvas.height = video.videoHeight || 480;
                 setMsg('Mostra a mão à câmara!');
+                if (!loopAtivo) { loopAtivo = true; loopCamara(); }
             } catch (e) {
-                setMsg('A usar teclado manual/Emulação ativa.', 'erro');
+                setMsg('Sem acesso à câmara — usa o teclado manual.', 'erro');
                 setModo('teclado');
             }
         }
@@ -528,70 +431,43 @@
             iniciarCamara();
         });
 
-        const hands = new Hands({
-            locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`
-        });
-        hands.setOptions({
-            maxNumHands: 1, modelComplexity: 1,
-            minDetectionConfidence: 0.75, minTrackingConfidence: 0.5
-        });
+        const hands = new Hands({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}` });
+        hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.75, minTrackingConfidence: 0.5 });
         hands.onResults(aoReceberMao);
 
         async function loopCamara() {
             if (video.readyState >= 2 && !video.paused && !video.ended) {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
+                canvas.width = video.videoWidth; canvas.height = video.videoHeight;
                 await hands.send({ image: video });
             }
-            requestAnimationFrame(loopCamara);
+            if (loopAtivo) requestAnimationFrame(loopCamara);
         }
 
         function aoReceberMao(results) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
-                letraDiv.classList.remove('visivel');
-                containerGestoSugerido.classList.remove('visivel');
-                cancelarTimer();
-                letraAtual = null;
-                return;
+                letraDiv.classList.remove('visivel'); cancelarTimer(); letraAtual = null; return;
             }
             const lm = results.multiHandLandmarks[0];
             drawConnectors(ctx, lm, HAND_CONNECTIONS, { color: '#00FF88', lineWidth: 2 });
             drawLandmarks(ctx, lm, { color: '#FF0077', lineWidth: 1, radius: 4 });
-
             const letra = classificarGesto(lm);
-
             if (letra) {
-                letraTxt.textContent = letra;
-                letraDiv.classList.add('visivel');
-
-                tituloGestoSugerido.textContent = `Gesto da Letra ${letra}`;
-                imgGestoSugerido.src = `${letra}.png`;
-                containerGestoSugerido.classList.add('visivel');
-
-                if (letra !== letraAtual) {
-                    letraAtual = letra;
-                    cancelarTimer();
-                    iniciarTimer(letra);
-                }
+                letraTxt.textContent = letra; letraDiv.classList.add('visivel');
+                if (letra !== letraAtual) { letraAtual = letra; cancelarTimer(); iniciarTimer(letra); }
             } else {
-                letraDiv.classList.remove('visivel');
-                containerGestoSugerido.classList.remove('visivel');
-                cancelarTimer();
-                letraAtual = null;
+                letraDiv.classList.remove('visivel'); cancelarTimer(); letraAtual = null;
             }
         }
 
         function iniciarTimer(letra) {
-            progressVal = 0;
-            barraDiv.style.background = '#1D9E75';
+            progressVal = 0; barraDiv.style.background = '#1D9E75';
             progressInterval = setInterval(() => {
                 progressVal += 100 / (TEMPO_MS / 50);
                 barraDiv.style.width = Math.min(progressVal, 100) + '%';
             }, 50);
             timerConfirm = setTimeout(() => {
-                clearInterval(progressInterval);
-                barraDiv.style.width = '0%';
+                clearInterval(progressInterval); barraDiv.style.width = '0%';
                 if (!jogoTerminado) {
                     handleLetra(letra);
                     barraDiv.style.background = '#fff';
@@ -601,33 +477,24 @@
         }
 
         function cancelarTimer() {
-            clearTimeout(timerConfirm);
-            clearInterval(progressInterval);
-            barraDiv.style.width = '0%';
-            timerConfirm = null;
-            progressInterval = null;
+            clearTimeout(timerConfirm); clearInterval(progressInterval);
+            barraDiv.style.width = '0%'; timerConfirm = null; progressInterval = null;
         }
 
         function setModo(modo) {
-            document.querySelectorAll('.tab-btn').forEach((b, i) => {
-                b.classList.toggle('ativo',
-                    (i === 0 && modo === 'camara') || (i === 1 && modo === 'teclado')
-                );
-            });
-            document.getElementById('camera-section').style.display =
-                modo === 'camara' ? 'block' : 'none';
-            document.getElementById('teclado-manual').style.display =
-                modo === 'teclado' ? 'flex' : 'none';
+            document.querySelectorAll('.tab-btn').forEach((b, i) =>
+                b.classList.toggle('ativo', (i === 0 && modo === 'camara') || (i === 1 && modo === 'teclado'))
+            );
+            document.getElementById('camera-section').style.display = modo === 'camara' ? 'block' : 'none';
+            document.getElementById('teclado-manual').style.display = modo === 'teclado' ? 'flex' : 'none';
         }
 
         function novoJogo() {
             palavraSecreta = PALAVRAS[Math.floor(Math.random() * PALAVRAS.length)];
-            tentativas = []; tentativaAtual = '';
-            jogoTerminado = false; estadoLetras = {};
+            tentativas = []; tentativaAtual = ''; jogoTerminado = false; estadoLetras = {};
             setMsg('Mostra a mão à câmara!');
             document.getElementById('btn-novo-jogo').classList.remove('visivel');
-            renderGrelha();
-            renderTeclado();
+            renderGrelha(); renderTeclado();
         }
 
         function handleLetra(k) {
@@ -641,61 +508,41 @@
             if (tentativaAtual.length < 5) { setMsg('Faltam letras!', 'erro'); return; }
             setMsg('');
             const tent = tentativaAtual;
-            atualizarEstadoLetras(tent);
-            tentativas.push(tent);
-            tentativaAtual = '';
-            renderGrelha();
-            renderTeclado();
+            atualizarEstadoLetras(tent); tentativas.push(tent); tentativaAtual = '';
+            renderGrelha(); renderTeclado();
             if (tent === palavraSecreta) {
                 jogoTerminado = true;
-                const n = tentatives.length;
-                setMsg(`🎉 Parabéns! Encontraste a palavra em ${n} tentativas!`, 'ganhou');
+                const n = tentativas.length;
+                setMsg(`🎉 Parabéns! Em ${n} tentativa${n > 1 ? 's' : ''}!`, 'ganhou');
                 document.getElementById('btn-novo-jogo').classList.add('visivel');
             } else if (tentativas.length >= 6) {
                 jogoTerminado = true;
-                setMsg(`❌ Esgotaste as tentativas! A palavra era: ${palavraSecreta}`, 'erro');
+                setMsg(`❌ A palavra era ${palavraSecreta}. Tenta novamente!`, 'erro');
                 document.getElementById('btn-novo-jogo').classList.add('visivel');
             }
         }
 
         function avaliar(tent) {
-            const res = Array(5).fill('errado');
-            const cnt = {};
+            const res = Array(5).fill('errado'), cnt = {};
             for (const c of palavraSecreta) cnt[c] = (cnt[c] || 0) + 1;
-            for (let i = 0; i < 5; i++) {
-                if (tent[i] === palavraSecreta[i]) { res[i] = 'correto'; cnt[tent[i]]--; }
-            }
-            for (let i = 0; i < 5; i++) {
-                if (res[i] !== 'correto' && cnt[tent[i]] > 0) { res[i] = 'presente'; cnt[tent[i]]--; }
-            }
+            for (let i = 0; i < 5; i++) if (tent[i] === palavraSecreta[i]) { res[i] = 'correto'; cnt[tent[i]]--; }
+            for (let i = 0; i < 5; i++) if (res[i] !== 'correto' && cnt[tent[i]] > 0) { res[i] = 'presente'; cnt[tent[i]]--; }
             return res;
         }
 
         function atualizarEstadoLetras(tent) {
-            const PRI = { correto: 3, presente: 2, errado: 1 };
-            const av = avaliar(tent);
-            tent.split('').forEach((l, i) => {
-                if (!estadoLetras[l] || PRI[av[i]] > PRI[estadoLetras[l]]) estadoLetras[l] = av[i];
-            });
+            const PRI = { correto: 3, presente: 2, errado: 1 }, av = avaliar(tent);
+            tent.split('').forEach((l, i) => { if (!estadoLetras[l] || PRI[av[i]] > PRI[estadoLetras[l]]) estadoLetras[l] = av[i]; });
         }
 
         function renderGrelha() {
-            const g = document.getElementById('grelha');
-            g.innerHTML = '';
+            const g = document.getElementById('grelha'); g.innerHTML = '';
             for (let l = 0; l < 6; l++) {
-                const linha = document.createElement('div');
-                linha.className = 'linha';
+                const linha = document.createElement('div'); linha.className = 'linha';
                 for (let c = 0; c < 5; c++) {
-                    const cel = document.createElement('div');
-                    cel.className = 'celula';
-                    if (l < tentativas.length) {
-                        cel.textContent = tentativas[l][c];
-                        cel.classList.add(avaliar(tentativas[l])[c]);
-                    } else if (l === tentativas.length && !jogoTerminado) {
-                        const ch = tentativaAtual[c] || '';
-                        cel.textContent = ch;
-                        if (ch) cel.classList.add('ativo');
-                    }
+                    const cel = document.createElement('div'); cel.className = 'celula';
+                    if (l < tentativas.length) { cel.textContent = tentativas[l][c]; cel.classList.add(avaliar(tentativas[l])[c]); }
+                    else if (l === tentativas.length && !jogoTerminado) { const ch = tentativaAtual[c] || ''; cel.textContent = ch; if (ch) cel.classList.add('ativo'); }
                     linha.appendChild(cel);
                 }
                 g.appendChild(linha);
@@ -709,14 +556,11 @@
         ];
 
         function renderTeclado() {
-            const t = document.getElementById('teclado-manual');
-            t.innerHTML = '';
+            const t = document.getElementById('teclado-manual'); t.innerHTML = '';
             TECLADO.forEach(linha => {
-                const div = document.createElement('div');
-                div.className = 'teclado-linha';
+                const div = document.createElement('div'); div.className = 'teclado-linha';
                 linha.forEach(k => {
-                    const btn = document.createElement('button');
-                    btn.className = 'tecla';
+                    const btn = document.createElement('button'); btn.className = 'tecla';
                     btn.textContent = k;
                     if (estadoLetras[k]) btn.classList.add(estadoLetras[k]);
                     btn.onclick = () => handleLetra(k);
@@ -727,22 +571,18 @@
         }
 
         function setMsg(txt, tipo = '') {
-            const el = document.getElementById('msg-estado');
-            el.textContent = txt;
-            el.className = tipo;
+            const el = document.getElementById('msg-estado'); el.textContent = txt; el.className = tipo;
         }
 
         document.addEventListener('keydown', e => {
             const k = e.key.toUpperCase();
             if (k === 'BACKSPACE') { handleLetra('⌫'); return; }
             if (k === 'ENTER') { handleLetra('↵'); return; }
-            if (/^[A-Z]$/.test(k)) handleLetra(k);
+            if (/^[A-ZÁÉÍÓÚÀÂÃÇÊÔ]$/.test(k)) handleLetra(k);
         });
 
         novoJogo();
-        iniciarCamara().then(() => {
-            video.addEventListener('loadeddata', loopCamara);
-        });
+        iniciarCamara();
     </script>
 </body>
 

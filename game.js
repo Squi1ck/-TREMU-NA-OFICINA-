@@ -615,3 +615,4 @@ novoJogo();
 iniciarCamara().then(() => {
     video.addEventListener('loadeddata', loopCamara);
 });
+
